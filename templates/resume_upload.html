@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Upload</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #e8c96a;
+      --gold-dim: rgba(201,168,76,0.15);
+      --bg: #0c0b10;
+      --surface: #13111a;
+      --surface2: #1a1825;
+      --text: #e8e0d0;
+      --muted: #7a7265;
+      --border: rgba(201,168,76,0.25);
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+
+    /* ── Grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Ambient glow ── */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 60vw; height: 60vw;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%);
+      top: -20vw; left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 60px 40px;
+      gap: 60px;
+      align-items: center;
+    }
+
+    /* ── Left panel ── */
+    .left {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 500;
+    }
+    .eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px; height: 1px;
+      background: var(--gold);
+    }
+
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.4rem, 4vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--text);
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: var(--muted);
+      font-weight: 300;
+      max-width: 380px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 48px; height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Requirements ── */
+    .requirements h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 20px;
+      font-weight: 400;
+    }
+
+    .req-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .req-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #998f82;
+    }
+    .req-icon {
+      width: 18px; height: 18px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+    }
+    .req-icon svg { width: 9px; height: 9px; fill: var(--gold); }
+    .req-list li strong { color: var(--text); font-weight: 500; }
+
+    /* ── Right panel / Upload card ── */
+    .right {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 48px 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    /* Corner accents */
+    .card::before, .card::after {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      border-color: var(--gold);
+      border-style: solid;
+    }
+    .card::before { top: 16px; left: 16px; border-width: 1px 0 0 1px; }
+    .card::after  { bottom: 16px; right: 16px; border-width: 0 1px 1px 0; }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      border: 1px dashed rgba(201,168,76,0.4);
+      border-radius: 2px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      background: rgba(201,168,76,0.02);
+    }
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--gold);
+      background: var(--gold-dim);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer;
+      width: 100%; height: 100%;
+    }
+
+    .drop-icon {
+      width: 52px; height: 52px;
+      margin: 0 auto 20px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .drop-zone:hover .drop-icon {
+      border-color: var(--gold);
+      transform: translateY(-3px);
+    }
+    .drop-icon svg { width: 22px; height: 22px; stroke: var(--gold); fill: none; }
+
+    .drop-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .drop-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .drop-sub span {
+      color: var(--gold);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    /* ── File badge ── */
+    .file-badge {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 14px 18px;
+      margin-top: 16px;
+      animation: fadeUp 0.35s ease;
+    }
+    .file-badge.visible { display: flex; }
+    .file-badge svg { width: 20px; height: 20px; stroke: var(--gold); fill: none; flex-shrink:0; }
+    .file-info { flex: 1; overflow: hidden; }
+    .file-name {
+      font-size: 0.85rem;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-size { font-size: 0.75rem; color: var(--muted); }
+    .file-remove {
+      background: none; border: none;
+      color: var(--muted); cursor: pointer;
+      font-size: 1.1rem; line-height: 1;
+      transition: color 0.2s;
+    }
+    .file-remove:hover { color: #e87070; }
+
+    /* ── Submit button ── */
+    .submit-btn {
+      width: 100%;
+      margin-top: 24px;
+      padding: 17px 24px;
+      background: var(--gold);
+      color: #0c0b10;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.25s, transform 0.15s;
+    }
+    .submit-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .submit-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      display: none;
+      margin-top: 16px;
+      gap: 10px;
+      flex-direction: column;
+    }
+    .progress-wrap.visible { display: flex; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .progress-track {
+      height: 2px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light));
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.2s linear;
+    }
+
+    /* ── Success state ── */
+    .success-msg {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: rgba(100,200,120,0.08);
+      border: 1px solid rgba(100,200,120,0.3);
+      border-radius: 2px;
+      padding: 14px 18px;
+      margin-top: 16px;
+      font-size: 0.83rem;
+      color: #7dd4a0;
+      animation: fadeUp 0.4s ease;
+    }
+    .success-msg.visible { display: flex; }
+    .success-msg svg { width: 16px; height: 16px; stroke: #7dd4a0; fill:none; flex-shrink:0; }
+
+    /* ── Accepted formats chips ── */
+    .formats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 4px 12px;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(8px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    .left { animation: fadeUp 0.6s ease both; }
+    .right { animation: fadeUp 0.6s 0.15s ease both; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .page {
+        grid-template-columns: 1fr;
+        padding: 40px 24px;
+        gap: 40px;
+      }
+      h1 { font-size: 2.2rem; }
+      .card { padding: 36px 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── Left: Branding & Info ── -->
+  <div class="left">
+    <div>
+      <div class="eyebrow">Career Portal</div>
+    </div>
+
+    <div>
+      <h1>Submit Your<br><em>Résumé</em></h1>
+    </div>
+
+    <p class="subtitle">
+      Take the first step toward your next opportunity. Upload your résumé and let us match you with roles that align with your expertise and ambitions.
+    </p>
+
+    <div class="divider"></div>
+
+    <div class="requirements">
+      <h2>Submission Guidelines</h2>
+      <ul class="req-list">
+        <li>
+          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
+          <span><strong>Accepted formats:</strong> PDF, DOC, DOCX, TXT</span>
+        </li>
+        <li>
+          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
+          <span><strong>Maximum file size:</strong> 10 MB</span>
+        </li>
+        <li>
+          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
+          <span><strong>File naming:</strong> Use <em>FirstLast_Role.pdf</em> for easy identification</span>
+        </li>
+        <li>
+          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
+          <span><strong>Document quality:</strong> Ensure text is selectable — no password protection or scanned images</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="formats">
+      <span class="chip">PDF</span>
+      <span class="chip">DOC</span>
+      <span class="chip">DOCX</span>
+      <span class="chip">TXT</span>
+    </div>
+  </div>
+
+  <!-- ── Right: Upload Card ── -->
+  <div class="right">
+    <div class="card">
+
+      <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <input type="text" name="firstName" placeholder="First Name" required>
+        <input type="text" name="lastName" placeholder="Last Name" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <!-- Drop zone -->
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="resume" name="file" accept=".pdf,.doc,.docx,.txt" required>
+          <div class="drop-icon">
+            <!-- Upload arrow icon -->
+            <svg viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/>
+            </svg>
+          </div>
+          <p class="drop-title">Drop your résumé here</p>
+          <p class="drop-sub">or <span>browse files</span> from your device</p>
+        </div>
+
+        <!-- File badge -->
+        <div class="file-badge" id="fileBadge">
+          <svg viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V6a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"/>
+          </svg>
+          <div class="file-info">
+            <div class="file-name" id="fileName">—</div>
+            <div class="file-size" id="fileSize">—</div>
+          </div>
+          <button type="button" class="file-remove" id="fileRemove" title="Remove file">✕</button>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>
+          Upload Résumé
+        </button>
+
+        <!-- Progress -->
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-label"> 
+            <span>Uploading…</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+
+        <!-- Success -->
+        <div class="success-msg" id="successMsg">
+          <svg viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Résumé uploaded successfully. We'll be in touch soon.
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+<div style="margin:40px; color:white;">
+    <h2>Submitted Candidates</h2>
+        {% for doc in newdocs %}
+            <div style="margin:15px 0; padding:15px; border:1px solid #c9a84c;">
+              <p>First Name: {{ doc.firstName }}</p>
+              <p>Last Name: {{ doc.lastName }}</p>
+              <p>Email: {{ doc.email }}</p>
+              
+              <p><strong>AI Result:</strong></p>
+              <p style="color:#7dd4a0;">
+                  {{ doc.processed_text }}
+              </p>
+              
+              <div style="margin-top:10px;">
+                  <a href="/process/{{ doc._id }}">
+                      <button style="padding:8px 16px; cursor:pointer;">
+                          Process Resume
+                      </button>
+                  </a>
+              
+                  <a href="/get-file/{{ doc._id }}" target="_blank">
+                      <button style="padding:8px 16px; cursor:pointer;">
+                          View Resume
+                      </button>
+                  </a>
+              </div>
+              
+              <hr>
+            </div>
+        {% endfor %}
+</div>
+
+
+
+<script>
+  const dropZone   = document.getElementById('dropZone');
+  const fileInput  = document.getElementById('resume');
+  const fileBadge  = document.getElementById('fileBadge');
+  const fileName   = document.getElementById('fileName');
+  const fileSize   = document.getElementById('fileSize');
+  const fileRemove = document.getElementById('fileRemove');
+  const submitBtn  = document.getElementById('submitBtn');
+  const uploadForm = document.getElementById('uploadForm');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar  = document.getElementById('progressBar');
+  const progressPct  = document.getElementById('progressPct');
+  const successMsg   = document.getElementById('successMsg');
+
+  const MAX_BYTES = 10 * 1024 * 1024;
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  function showFile(file) {
+    if (file.size > MAX_BYTES) {
+      alert('File exceeds the 10 MB limit. Please choose a smaller file.');
+      clearFile(); return;
+    }
+    fileName.textContent = file.name;
+    fileSize.textContent = formatBytes(file.size);
+    fileBadge.classList.add('visible');
+    submitBtn.disabled = false;
+  }
+
+  function clearFile() {
+    fileInput.value = '';
+    fileBadge.classList.remove('visible');
+    submitBtn.disabled = true;
+  }
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) showFile(fileInput.files[0]);
+  });
+
+  fileRemove.addEventListener('click', clearFile);
+
+  // Drag-and-drop
+  ['dragenter','dragover'].forEach(evt =>
+    dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('drag-over'); })
+  );
+  ['dragleave','drop'].forEach(evt =>
+    dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove('drag-over'); })
+  );
+  dropZone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file) { showFile(file); }
+  });
+
+  // Simulated upload progress (replace with real XHR for production)
+  uploadForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  if (!fileInput.files.length) return;
+
+  submitBtn.disabled = true;
+  progressWrap.classList.add('visible');
+
+  const formData = new FormData(uploadForm);
+
+  try {
+    const response = await fetch("/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const result = await response.json();
+
+    progressBar.style.width = '100%';
+    progressPct.textContent = '100%';
+
+    setTimeout(() => {
+      progressWrap.classList.remove('visible');
+      successMsg.classList.add('visible');
+    }, 400);
+
+    console.log(result);
+
+  } catch (error) {
+    console.error("Upload failed:", error);
+  }
+});
+
+</script>
+
+</body>
+</html>

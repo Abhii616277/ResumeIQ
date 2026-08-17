@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us</title>
+
+    <!-- Bootstrap (for grid + icons used by the original markup) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Type: a code-editor-flavored display face paired with a clean body face -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+    :root{
+        --bg-1: #0B0F1A;
+        --bg-2: #121A2B;
+        --accent-cyan: #34E4EA;
+        --accent-violet: #8C6BFF;
+        --accent-amber: #FFB454;
+        --text-main: #F2F5FA;
+        --text-muted: #8B93A7;
+    }
+
+    *{ box-sizing: border-box; }
+
+    body{
+        font-family: 'Inter', sans-serif;
+        margin: 0;
+    }
+
+    /* ---------- Eye-catching background ---------- */
+    .hub-bg{
+        position: relative;
+        min-height: 100vh;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 15% 20%, rgba(140,107,255,0.35), transparent 45%),
+            radial-gradient(circle at 85% 15%, rgba(52,228,234,0.30), transparent 50%),
+            radial-gradient(circle at 50% 90%, rgba(255,180,84,0.18), transparent 55%),
+            linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 55%, #0d1424 100%);
+        background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+        animation: driftGradient 18s ease-in-out infinite;
+    }
+
+    @keyframes driftGradient{
+        0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+        50%  { background-position: 30% 40%, 70% 30%, 60% 70%, 0 0; }
+        100% { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+    }
+
+    /* faint code grid overlay */
+    .hub-bg::before{
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+        background-size: 42px 42px;
+        mask-image: radial-gradient(circle at 50% 30%, black 0%, transparent 75%);
+        pointer-events: none;
+    }
+
+    /* softly floating code glyphs for atmosphere */
+    .glyphs span{
+        position: absolute;
+        font-family: 'JetBrains Mono', monospace;
+        color: rgba(255,255,255,0.06);
+        font-weight: 700;
+        user-select: none;
+        pointer-events: none;
+        animation: floatUp 14s linear infinite;
+    }
+    @keyframes floatUp{
+        0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+        10%  { opacity: 1; }
+        90%  { opacity: 1; }
+        100% { transform: translateY(-120px) rotate(6deg); opacity: 0; }
+    }
+
+    /* ---------- Header ---------- */
+    .brand-title{
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 2px;
+        color: var(--text-main);
+        text-shadow: 0 0 24px rgba(140,107,255,0.45);
+    }
+    .brand-title .accent{ color: var(--accent-cyan); }
+
+    .back-btn{
+        color: var(--text-main) !important;
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 999px;
+        padding: 6px 16px;
+        transition: all 0.25s ease;
+        background: rgba(255,255,255,0.03);
+    }
+    .back-btn:hover{
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan) !important;
+        box-shadow: 0 0 18px rgba(52,228,234,0.35);
+    }
+
+    /* ---------- Profile "terminal card" ---------- */
+    .about{
+        min-height: 65vh;
+        display: flex;
+        align-items: center;
+        padding: 3rem 1rem 5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .terminal-card{
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+        background: rgba(18, 24, 40, 0.6);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.02);
+        overflow: hidden;
+    }
+
+    .terminal-bar{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.03);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .terminal-dot{ width: 11px; height: 11px; border-radius: 50%; }
+    .dot-red{ background: #FF5F57; }
+    .dot-amber{ background: #FEBC2E; }
+    .dot-green{ background: #28C840; }
+    .terminal-label{
+        margin-left: auto;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .terminal-body{
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 2.5rem;
+        gap: 2rem;
+    }
+
+    .about-photo-wrap{
+        flex: 0 0 auto;
+        position: relative;
+    }
+    .about-photo-wrap::after{
+        content: "";
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, var(--accent-cyan), var(--accent-violet), var(--accent-amber), var(--accent-cyan));
+        z-index: -1;
+        filter: blur(6px);
+        opacity: 0.75;
+        animation: spinRing 8s linear infinite;
+    }
+    @keyframes spinRing{ to{ transform: rotate(360deg); } }
+
+    .about-photo{
+        width: 190px;
+        height: 190px;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
+        filter: grayscale(30%);
+        border: 4px solid var(--bg-2);
+        transition: filter 0.4s ease, transform 0.4s ease;
+    }
+    .about-photo:hover{
+        filter: grayscale(0%);
+        transform: scale(1.03);
+    }
+
+    .about-info{ flex: 1 1 320px; }
+
+    .prompt-line{
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+        color: var(--accent-cyan);
+        margin-bottom: 6px;
+    }
+    .prompt-line .caret{
+        display: inline-block;
+        width: 8px; height: 16px;
+        background: var(--accent-cyan);
+        margin-left: 4px;
+        vertical-align: -2px;
+        animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink{ 50%{ opacity: 0; } }
+
+    .about-name{
+        color: var(--text-main);
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        letter-spacing: 1px;
+        margin-bottom: 0.25rem;
+    }
+    .role-tag{
+        display: inline-block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--accent-amber);
+        border: 1px solid rgba(255,180,84,0.4);
+        border-radius: 999px;
+        padding: 2px 10px;
+        margin-bottom: 1rem;
+    }
+    .meta-line{ color: var(--text-muted); margin-bottom: 4px; }
+    .meta-line b{ color: var(--text-main); }
+
+    .about-bio{
+        color: var(--text-muted);
+        line-height: 1.7;
+        margin: 1rem 0 1.5rem;
+        max-width: 55ch;
+    }
+
+    .reach-btn{
+        font-family: 'JetBrains Mono', monospace;
+        background: linear-gradient(90deg, var(--accent-violet), var(--accent-cyan));
+        border: none;
+        color: #0B0F1A;
+        font-weight: 700;
+        padding: 10px 22px;
+        border-radius: 10px;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .reach-btn:hover{
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(52,228,234,0.35);
+        color: #0B0F1A;
+    }
+
+    @media (max-width: 576px){
+        .terminal-body{ flex-direction: column; text-align: center; padding: 1.75rem; }
+        .about-info{ flex: 1 1 100%; }
+        .about-bio{ margin-left: auto; margin-right: auto; }
+    }
+
+</style>
+</head>
+
+<body>
+    <section class="hub-bg">
+
+        <!-- ambient floating code glyphs -->
+        <div class="glyphs">
+            <span style="left:8%; top:70%; font-size:22px; animation-delay:0s;">&lt;/&gt;</span>
+            <span style="left:22%; top:85%; font-size:16px; animation-delay:2s;">{ }</span>
+            <span style="left:78%; top:75%; font-size:20px; animation-delay:4s;">01</span>
+            <span style="left:65%; top:90%; font-size:14px; animation-delay:6s;">const</span>
+            <span style="left:45%; top:80%; font-size:18px; animation-delay:1s;">=&gt;</span>
+            <span style="left:90%; top:60%; font-size:16px; animation-delay:5s;">#!/</span>
+        </div>
+
+        <div class="container-fluid position-relative" style="z-index:1;">
+            <div class="row py-3">
+                <div class="col-12 d-flex">
+                    <a class="d-flex text-decoration-none" href="index.html">
+                        <button class="btn back-btn">
+                            <i class="bi bi-arrow-left-circle-fill"></i>
+                            <span class="ms-2">Back</span>
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <section class="about">
+            <div class="terminal-card">
+                <div class="terminal-bar">
+                    <span class="terminal-dot dot-red"></span>
+                    <span class="terminal-dot dot-amber"></span>
+                    <span class="terminal-dot dot-green"></span>
+                    <span class="terminal-label">~/team/abhinav-raj.profile</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="about-photo-wrap">
+                        <img src="ABHINAV.jpg" class="about-photo" alt="Abhinav Raj">
+                    </div>
+                    <div class="about-info">
+                        <div class="prompt-line">whoami<span class="caret"></span></div>
+                        <h3 class="about-name">ABHINAV RAJ</h3>
+                        <span class="role-tag">RESEARCH &amp; WEB DEVELOPMENT</span>
+                        <p class="meta-line">Registration ID <b>12419607</b></p>
+                        <p class="meta-line">BTech CSE</p>
+                        <p class="about-bio">
+                            My name is Abhinav, and I am introducing myself as a highly motivated and skilled student.
+                            Currently, I am actively engaged in computer science &amp; practical lessons.
+                        </p>
+                        <a href="tel:6232296641">
+                            <button class="btn reach-btn"><span class="me-2">Reach Me</span><i class="bi bi-arrow-right-circle-fill"></i></button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </section>
+</body>
+</html>

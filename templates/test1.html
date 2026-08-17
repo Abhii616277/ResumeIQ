@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Upload</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #e8c96a;
+      --gold-dim: rgba(201,168,76,0.15);
+      --bg: #0c0b10;
+      --surface: #13111a;
+      --surface2: #1a1825;
+      --text: #e8e0d0;
+      --muted: #7a7265;
+      --border: rgba(201,168,76,0.25);
+    }
+
+    html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Cormorant Garamond', Georgia, serif; }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: ''; position: fixed;
+      width: 60vw; height: 60vw; border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%);
+      top: -20vw; left: 50%; transform: translateX(-50%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr 1fr;
+      max-width: 1140px; margin: 0 auto;
+      padding: 60px 40px; gap: 60px; align-items: center;
+    }
+    .left { display: flex; flex-direction: column; gap: 36px; animation: fadeUp 0.6s ease both; }
+    .right { display: flex; flex-direction: column; gap: 24px; animation: fadeUp 0.6s 0.15s ease both; }
+
+    .eyebrow { display: flex; align-items: center; gap: 12px; font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); font-weight: 500; }
+    .eyebrow::before { content: ''; display: block; width: 32px; height: 1px; background: var(--gold); }
+
+    h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.4rem, 4vw, 3.6rem); font-weight: 700; line-height: 1.1; }
+    h1 em { font-style: italic; color: var(--gold-light); }
+
+    .subtitle { font-size: 1.05rem; line-height: 1.75; color: var(--muted); font-weight: 300; max-width: 380px; }
+    .divider { width: 48px; height: 1px; background: var(--border); }
+
+    .requirements h2 { font-family: 'Playfair Display', serif; font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; font-weight: 400; }
+    .req-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .req-list li { display: flex; align-items: flex-start; gap: 14px; font-size: 0.88rem; line-height: 1.6; color: #998f82; }
+    .req-icon { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; border: 1px solid var(--border); border-radius: 50%; display: grid; place-items: center; }
+    .req-icon svg { width: 9px; height: 9px; }
+    .req-list li strong { color: var(--text); font-weight: 500; }
+
+    .formats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 2px; padding: 4px 12px; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 2px; padding: 48px 40px; position: relative; overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .card::before, .card::after { content: ''; position: absolute; width: 20px; height: 20px; border-color: var(--gold); border-style: solid; }
+    .card::before { top: 16px; left: 16px; border-width: 1px 0 0 1px; }
+    .card::after  { bottom: 16px; right: 16px; border-width: 0 1px 1px 0; }
+
+    .card input[type="text"],
+    .card input[type="email"] {
+      width: 100%; display: block; margin-bottom: 14px;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 2px;
+      padding: 14px 16px; color: var(--text);
+      font-family: 'Cormorant Garamond', serif; font-size: 0.95rem;
+      outline: none; transition: border-color .2s;
+    }
+    .card input:focus { border-color: var(--gold); }
+
+    .drop-zone {
+      border: 1px dashed rgba(201,168,76,0.4); border-radius: 2px; padding: 48px 24px;
+      text-align: center; cursor: pointer; transition: all 0.3s ease;
+      position: relative; background: rgba(201,168,76,0.02);
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--gold); background: var(--gold-dim); }
+    .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+    .drop-icon { width: 52px; height: 52px; margin: 0 auto 20px; border: 1px solid var(--border); border-radius: 50%; display: grid; place-items: center; transition: border-color 0.3s, transform 0.3s; }
+    .drop-zone:hover .drop-icon { border-color: var(--gold); transform: translateY(-3px); }
+    .drop-icon svg { width: 22px; height: 22px; stroke: var(--gold); fill: none; }
+    .drop-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--text); margin-bottom: 6px; }
+    .drop-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.05em; }
+    .drop-sub span { color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+    .file-badge { display: none; align-items: center; gap: 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 2px; padding: 14px 18px; margin-top: 16px; }
+    .file-badge.visible { display: flex; }
+    .file-badge svg { width: 20px; height: 20px; stroke: var(--gold); fill: none; flex-shrink: 0; }
+    .file-info { flex: 1; overflow: hidden; }
+    .file-name { font-size: 0.85rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-size { font-size: 0.75rem; color: var(--muted); }
+    .file-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; transition: color 0.2s; }
+    .file-remove:hover { color: #e87070; }
+
+    .submit-btn {
+      width: 100%; margin-top: 24px; padding: 17px 24px;
+      background: var(--gold); color: #0c0b10;
+      font-family: 'Cormorant Garamond', serif; font-size: 0.85rem;
+      font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase;
+      border: none; border-radius: 2px; cursor: pointer;
+      position: relative; overflow: hidden; transition: background 0.25s, transform 0.15s;
+    }
+    .submit-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
+    .submit-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .progress-wrap { display: none; margin-top: 16px; gap: 10px; flex-direction: column; }
+    .progress-wrap.visible { display: flex; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); letter-spacing: 0.08em; }
+    .progress-track { height: 2px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; width: 0%; transition: width 0.2s linear; }
+
+    .success-msg { display: none; align-items: center; gap: 12px; background: rgba(100,200,120,0.08); border: 1px solid rgba(100,200,120,0.3); border-radius: 2px; padding: 14px 18px; margin-top: 16px; font-size: 0.83rem; color: #7dd4a0; }
+    .success-msg.visible { display: flex; }
+    .success-msg svg { width: 16px; height: 16px; stroke: #7dd4a0; fill: none; flex-shrink: 0; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 768px) {
+      .page { grid-template-columns: 1fr; padding: 40px 24px; gap: 40px; }
+      h1 { font-size: 2.2rem; }
+      .card { padding: 36px 28px; }
+    }
+
+    /* ══════════════════════════════════
+       RANKING TABLE
+    ══════════════════════════════════ */
+    .ranking-section {
+      position: relative; z-index: 1;
+      max-width: 1140px; margin: 0 auto; padding: 0 40px 80px;
+    }
+
+    .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .section-header h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; }
+    .section-header h2 em { font-style: italic; color: var(--gold-light); }
+    .count-badge { background: var(--gold-dim); border: 1px solid var(--border); border-radius: 20px; padding: 4px 14px; font-size: 0.72rem; letter-spacing: 0.15em; color: var(--gold); text-transform: uppercase; }
+
+    .rank-table { width: 100%; border-collapse: collapse; }
+    .rank-table thead tr { border-bottom: 1px solid var(--border); }
+    .rank-table th { padding: 12px 18px; text-align: left; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+
+    .rank-table tbody tr { border-bottom: 1px solid rgba(201,168,76,0.07); transition: background 0.2s; }
+    .rank-table tbody tr:hover { background: rgba(201,168,76,0.04); }
+    .rank-table td { padding: 18px; vertical-align: middle; }
+
+    .td-rank { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--muted); width: 50px; text-align: center; }
+    .td-rank.gold   { color: #c9a84c; }
+    .td-rank.silver { color: #b0b0b0; }
+    .td-rank.bronze { color: #cd7f32; }
+
+    .cand-name  { font-family: 'Playfair Display', serif; font-size: 0.95rem; color: var(--text); }
+    .cand-email { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+
+    .ext-badge { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 2px; padding: 3px 9px; font-size: 0.68rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+
+    .score-bar-row { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+    .score-track { flex: 1; height: 4px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .score-fill { height: 100%; border-radius: 4px; transition: width 1.2s ease; }
+    .score-fill.high { background: linear-gradient(90deg, #c9a84c, #e8c96a); }
+    .score-fill.mid  { background: linear-gradient(90deg, #8db840, #b8e050); }
+    .score-fill.low  { background: linear-gradient(90deg, #cd7f32, #e09a50); }
+    .score-num     { font-family: 'Playfair Display', serif; font-size: 0.9rem; color: var(--gold); min-width: 36px; text-align: right; }
+    .score-pending { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.05em; min-width: 52px; text-align: right; }
+
+    .td-actions { text-align: right; white-space: nowrap; }
+    .btn { display: inline-block; padding: 7px 14px; font-family: 'Cormorant Garamond', serif; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; border: 1px solid var(--border); border-radius: 2px; background: transparent; color: var(--gold); text-decoration: none; cursor: pointer; transition: background 0.2s, border-color 0.2s; margin-left: 6px; }
+    .btn:hover { background: var(--gold-dim); border-color: var(--gold); }
+    .btn.accent { background: var(--gold); color: #0c0b10; border-color: var(--gold); }
+    .btn.accent:hover { background: var(--gold-light); }
+
+    .sep-row td { padding: 8px 18px; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); border-top: 1px dashed rgba(201,168,76,0.15); }
+
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty svg { width: 44px; height: 44px; stroke: var(--border); fill: none; margin: 0 auto 14px; display: block; }
+    .empty p { font-size: 0.9rem; }
+
+    @media (max-width: 768px) { .ranking-section { padding: 0 24px 60px; } }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <div class="left">
+    <div class="eyebrow">Career Portal</div>
+    <h1>Submit Your<br><em>Résumé</em></h1>
+    <p class="subtitle">Take the first step toward your next opportunity. Upload your résumé and let us match you with roles that align with your expertise and ambitions.</p>
+    <div class="divider"></div>
+    <div class="requirements">
+      <h2>Submission Guidelines</h2>
+      <ul class="req-list">
+        <li>
+          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
+          <span><strong>Accepted formats:</strong> PDF, DOC, DOCX, TXT</span>
+        </li>
+        <li>
+          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
+          <span><strong>Maximum file size:</strong> 10 MB</span>
+        </li>
+        <li>
+          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
+          <span><strong>File naming:</strong> Use <em>FirstLast_Role.pdf</em> for easy identification</span>
+        </li>
+        <li>
+          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
+          <span><strong>Document quality:</strong> Ensure text is selectable — no password protection</span>
+        </li>
+      </ul>
+    </div>
+    <div class="formats">
+      <span class="chip">PDF</span>
+      <span class="chip">DOC</span>
+      <span class="chip">DOCX</span>
+      <span class="chip">TXT</span>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <input type="text"  name="firstName" placeholder="First Name" required>
+        <input type="text"  name="lastName"  placeholder="Last Name"  required>
+        <input type="email" name="email"     placeholder="Email"      required>
+
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="resume" name="file" accept=".pdf,.doc,.docx,.txt" required>
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/>
+            </svg>
+          </div>
+          <p class="drop-title">Drop your résumé here</p>
+          <p class="drop-sub">or <span>browse files</span> — PDF, DOC, DOCX, TXT</p>
+        </div>
+
+        <div class="file-badge" id="fileBadge">
+          <svg viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V6a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"/>
+          </svg>
+          <div class="file-info">
+            <div class="file-name" id="fileName">—</div>
+            <div class="file-size" id="fileSize">—</div>
+          </div>
+          <button type="button" class="file-remove" id="fileRemove">✕</button>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>Upload Résumé</button>
+
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-label"><span>Uploading…</span><span id="progressPct">0%</span></div>
+          <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        </div>
+
+        <div class="success-msg" id="successMsg">
+          <svg viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Résumé uploaded successfully. We'll be in touch soon.
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── Ranking Section ── -->
+<div class="ranking-section">
+  <div class="section-header">
+    <h2>Candidate <em>Rankings</em></h2>
+    <span class="count-badge">{{ newdocs|length }} submitted</span>
+  </div>
+
+  {% if newdocs %}
+  <table class="rank-table">
+    <thead>
+      <tr>
+        <th style="text-align:center">Rank</th>
+        <th>Candidate</th>
+        <th>Format</th>
+        <th>Score</th>
+        <th style="text-align:right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      {% for doc in newdocs %}
+      <tr>
+        <td class="td-rank
+          {% if doc.rank == '1' %}gold
+          {% elif doc.rank == '2' %}silver
+          {% elif doc.rank == '3' %}bronze
+          {% endif %}">
+          {{ doc.rank }}
+        </td>
+
+        <td>
+          <div class="cand-name">{{ doc.firstName }} {{ doc.lastName }}</div>
+          <div class="cand-email">{{ doc.email }}</div>
+        </td>
+
+        <td><span class="ext-badge">{{ doc.file_ext }}</span></td>
+
+        <td>
+          {% if doc.is_processed %}
+          <div class="score-bar-row">
+            <div class="score-track">
+              <div class="score-fill {{ doc.bar_class }}" style="width:{{ doc.bar_width }}%"></div>
+            </div>
+            <span class="score-num">{{ doc.score_str }}</span>
+          </div>
+          {% else %}
+          <div class="score-bar-row">
+            <div class="score-track"><div class="score-fill" style="width:0%"></div></div>
+            <span class="score-pending">Pending</span>
+          </div>
+          {% endif %}
+        </td>
+
+        <td class="td-actions">
+          {% if doc.is_processed %}
+          <a href="/process/{{ doc._id }}" class="btn">Re-score</a>
+          {% else %}
+          <a href="/process/{{ doc._id }}" class="btn accent">Score Now</a>
+          {% endif %}
+          <a href="/get-file/{{ doc._id }}" target="_blank" class="btn">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+
+    </tbody>
+  </table>
+
+  {% else %}
+  <div class="empty">
+    <svg viewBox="0 0 24 24" stroke-width="1.3">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V6a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"/>
+    </svg>
+    <p>No candidates yet. Upload the first résumé above.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  const dropZone     = document.getElementById('dropZone');
+  const fileInput    = document.getElementById('resume');
+  const fileBadge    = document.getElementById('fileBadge');
+  const fileName     = document.getElementById('fileName');
+  const fileSize     = document.getElementById('fileSize');
+  const fileRemove   = document.getElementById('fileRemove');
+  const submitBtn    = document.getElementById('submitBtn');
+  const uploadForm   = document.getElementById('uploadForm');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar  = document.getElementById('progressBar');
+  const progressPct  = document.getElementById('progressPct');
+  const successMsg   = document.getElementById('successMsg');
+
+  const MAX_BYTES = 10 * 1024 * 1024;
+  const ALLOWED   = ['pdf', 'doc', 'docx', 'txt'];
+
+  function formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(2) + ' MB';
+  }
+
+  function getExt(name) { return name.split('.').pop().toLowerCase(); }
+
+  function showFile(file) {
+    if (file.size > MAX_BYTES) { alert('File exceeds 10 MB limit.'); clearFile(); return; }
+    if (!ALLOWED.includes(getExt(file.name))) {
+      alert('Unsupported format. Please use PDF, DOC, DOCX or TXT.');
+      clearFile(); return;
+    }
+    fileName.textContent = file.name;
+    fileSize.textContent = formatBytes(file.size);
+    fileBadge.classList.add('visible');
+    submitBtn.disabled = false;
+  }
+
+  function clearFile() {
+    fileInput.value = '';
+    fileBadge.classList.remove('visible');
+    submitBtn.disabled = true;
+  }
+
+  fileInput.addEventListener('change', () => { if (fileInput.files.length) showFile(fileInput.files[0]); });
+  fileRemove.addEventListener('click', clearFile);
+
+  ['dragenter', 'dragover'].forEach(ev =>
+    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('drag-over'); })
+  );
+  ['dragleave', 'drop'].forEach(ev =>
+    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('drag-over'); })
+  );
+  dropZone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) showFile(e.dataTransfer.files[0]); });
+
+  uploadForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!fileInput.files.length) return;
+    submitBtn.disabled = true;
+    progressWrap.classList.add('visible');
+
+    let pct = 0;
+    const ticker = setInterval(() => {
+      pct = Math.min(pct + Math.random() * 15, 90);
+      progressBar.style.width = pct + '%';
+      progressPct.textContent = Math.round(pct) + '%';
+    }, 200);
+
+    try {
+      const res    = await fetch('/upload', { method: 'POST', body: new FormData(uploadForm) });
+      const result = await res.json();
+      clearInterval(ticker);
+      progressBar.style.width = '100%';
+      progressPct.textContent = '100%';
+      setTimeout(() => {
+        progressWrap.classList.remove('visible');
+        if (result.error) { alert('Error: ' + result.error); submitBtn.disabled = false; }
+        else { successMsg.classList.add('visible'); }
+      }, 400);
+    } catch (err) {
+      clearInterval(ticker);
+      progressWrap.classList.remove('visible');
+      alert('Upload failed. Please try again.');
+      submitBtn.disabled = false;
+    }
+  });
+
+  /* Animate score bars on load */
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.score-fill').forEach(bar => {
+      const w = bar.style.width;
+      bar.style.width = '0%';
+      requestAnimationFrame(() => { bar.style.width = w; });
+    });
+  });
+</script>
+</body>
+</html>
