@@ -2,15 +2,77 @@
 routers/resume.py — all résumé-related HTTP endpoints.
 """
 from bson import ObjectId
-from fastapi import APIRouter, Request, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, Response
+from fastapi import APIRouter, Request, UploadFile, File, Form, Depends
+from fastapi.responses import HTMLResponse, Response, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from database import collection, fs
 from services.extractor import extract_text
 from services.gemini_service import analyze_resume
 from services.parser import parse_ai_response
+from services.auth_service import require_admin, get_token_payload, RedirectException
 from utils.logger import logger
+
+
+def _score_meta(score: int) -> dict:
+    """Return display colour, dim colour and verdict label for a score."""
+    if score >= 75:
+        return {
+            "score_color":     "#5ec97d",
+            "score_color_dim": "rgba(94,201,125,0.18)",
+            "verdict":         "Excellent",
+        }
+    elif score >= 50:
+        return {
+            "score_color":     "#c9a84c",
+            "score_color_dim": "rgba(201,168,76,0.18)",
+            "verdict":         "Good",
+        }
+    else:
+        return {
+            "score_color":     "#e07070",
+            "score_color_dim": "rgba(224,112,112,0.18)",
+            "verdict":         "Needs Work",
+        }
+
+
+def _error_page(title: str, message: str, status_code: int = 500) -> HTMLResponse:
+    """Return a styled error HTML page."""
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Error — {title}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet" />
+      <style>
+        *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
+        body{{min-height:100vh;display:grid;place-items:center;background:#0c0b10;
+              font-family:'Cormorant Garamond',Georgia,serif;color:#e8e0d0;}}
+        .box{{max-width:540px;text-align:center;padding:60px 40px;
+              border:1px solid rgba(224,112,112,0.3);border-radius:4px;
+              background:#13111a;box-shadow:0 40px 80px rgba(0,0,0,0.5);}}
+        .icon{{font-size:3rem;margin-bottom:24px;}}
+        h1{{font-family:'Playfair Display',serif;font-size:1.8rem;color:#e07070;margin-bottom:16px;}}
+        p{{font-size:1rem;line-height:1.8;color:#998f82;margin-bottom:32px;}}
+        a{{display:inline-block;padding:12px 28px;border:1px solid rgba(201,168,76,0.4);
+           border-radius:2px;color:#c9a84c;text-decoration:none;font-size:0.8rem;
+           letter-spacing:0.2em;text-transform:uppercase;transition:background 0.2s;}}
+        a:hover{{background:rgba(201,168,76,0.1);}}
+      </style>
+    </head>
+    <body>
+      <div class="box">
+        <div class="icon">&#x26A0;&#xFE0F;</div>
+        <h1>{title}</h1>
+        <p>{message}</p>
+        <a href="/resume_upload">&larr; Back to Candidates</a>
+      </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html, status_code=status_code)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -27,7 +89,13 @@ MEDIA_TYPES = {
 
 @router.get("/", response_class=HTMLResponse)
 async def read_item(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    payload = get_token_payload(request)
+    if payload:
+        if payload.get("role") == "admin":
+            return RedirectResponse(url="/resume_upload", status_code=302)
+        elif payload.get("role") == "candidate":
+            return RedirectResponse(url="/candidate/dashboard", status_code=302)
+    return RedirectResponse(url="/login", status_code=302)
 
 
 @router.get("/about_us", response_class=HTMLResponse)
@@ -36,7 +104,7 @@ async def read_about(request: Request):
 
 
 @router.get("/resume_upload", response_class=HTMLResponse)
-async def read_get_started(request: Request):
+async def read_get_started(request: Request, current_user = Depends(require_admin)):
     docs = collection.find({})
     newdocs = []
     for doc in docs:
@@ -74,9 +142,25 @@ async def read_get_started(request: Request):
         else:
             d["rank"] = "—"
 
+    # Admin Statistics
+    total_candidates = len(newdocs)
+    processed_candidates = sum(1 for d in newdocs if d["is_processed"])
+    average_score = round(sum(d["score"] for d in newdocs if d["is_processed"]) / processed_candidates) if processed_candidates else 0
+    top_score = max((d["score"] for d in newdocs if d["is_processed"]), default=0)
+
     return templates.TemplateResponse(
         "test1.html",
-        {"request": request, "newdocs": newdocs}
+        {
+            "request": request,
+            "newdocs": newdocs,
+            "stats": {
+                "total": total_candidates,
+                "processed": processed_candidates,
+                "pending": total_candidates - processed_candidates,
+                "average": average_score,
+                "top": top_score
+            }
+        }
     )
 
 
@@ -86,6 +170,7 @@ async def upload_resume(
     firstName: str = Form(...),
     lastName: str = Form(...),
     email: str = Form(...),
+    current_user = Depends(require_admin)
 ):
     logger.info(f"Upload started: {file.filename}")
     contents = await file.read()
@@ -111,7 +196,18 @@ async def upload_resume(
 
 
 @router.get("/get-file/{doc_id}")
-async def get_file(doc_id: str):
+async def get_file(request: Request, doc_id: str):
+    # Verify JWT authorization and access permissions
+    payload = get_token_payload(request)
+    if not payload:
+        return RedirectResponse(url="/login", status_code=302)
+    
+    role = payload.get("role")
+    if role == "candidate" and payload.get("doc_id") != doc_id:
+        return RedirectResponse(url="/login", status_code=302)
+    elif role not in ("admin", "candidate"):
+        return RedirectResponse(url="/login", status_code=302)
+
     doc = collection.find_one({"_id": ObjectId(doc_id)})
     if not doc:
         return {"error": "Document not found"}
@@ -129,45 +225,98 @@ async def get_file(doc_id: str):
     )
 
 
-@router.get("/process/{doc_id}")
-async def process_resume(doc_id: str):
-    doc = collection.find_one({"_id": ObjectId(doc_id)})
+@router.get("/process/{doc_id}", response_class=HTMLResponse)
+async def process_resume(request: Request, doc_id: str, current_user = Depends(require_admin)):
+    try:
+        doc = collection.find_one({"_id": ObjectId(doc_id)})
+    except Exception:
+        return _error_page("Invalid ID", "The document ID is invalid or malformed.", 400)
+
     if not doc:
-        return {"error": "Document not found"}
+        return _error_page("Not Found", "No résumé document was found with that ID.", 404)
 
     # 1. Read file from GridFS
-    file_obj = fs.get(doc["file_id"])
-    content = file_obj.read()
+    try:
+        file_obj = fs.get(doc["file_id"])
+        content = file_obj.read()
+    except Exception as e:
+        logger.error(f"[GridFS read error] {e}")
+        return _error_page("File Read Error", "Could not retrieve the uploaded file from storage. Please re-upload and try again.")
+
     filename = doc.get("filename", "resume.pdf")
 
     # 2. Extract text based on file type
     text = extract_text(content, filename)
     if not text.strip():
-        return {"error": f"Could not extract text from {filename}. The file may be scanned/image-based or corrupt."}
+        return _error_page(
+            "Text Extraction Failed",
+            f"Could not extract readable text from <strong>{filename}</strong>. "
+            "The file may be image-based, password-protected, or corrupt. "
+            "Please upload a text-selectable version.",
+            422,
+        )
 
     logger.info(f"Extracted {len(text)} characters from {filename}")
 
     # 3. Send to Gemini
-    raw = analyze_resume(text)
+    try:
+        raw = analyze_resume(text)
+    except Exception as e:
+        logger.error(f"[Gemini API error] {e}")
+        err_msg = str(e)
+        if "leaked" in err_msg.lower() or "PERMISSION_DENIED" in err_msg or "403" in err_msg:
+            user_msg = (
+                "Your Gemini API key has been <strong>flagged as leaked</strong> by Google and is now blocked. "
+                "Please generate a new key at "
+                "<a href='https://aistudio.google.com/app/apikey' target='_blank' style='color:#c9a84c'>Google AI Studio</a> "
+                "and update it in your <code>.env</code> file."
+            )
+        else:
+            user_msg = f"The AI analysis service is temporarily unavailable. Details: {e}"
+        return _error_page("AI Service Error", user_msg)
 
     # 4. Parse structured response
-    ai_result = parse_ai_response(raw)
-    logger.info(f"Score: {ai_result['score']}")
+    try:
+        ai_result = parse_ai_response(raw)
+        score = ai_result["score"]
+        logger.info(f"Score: {score}")
+    except Exception as e:
+        logger.error(f"[Parse error] {e}")
+        return _error_page("Parse Error", "The AI returned an unexpected response format. Please try scoring again.")
 
     # 5. Persist to MongoDB
-    collection.update_one(
-        {"_id": ObjectId(doc_id)},
-        {"$set": {
-            "processed_text": ai_result["summary"],  # backward-compat field
-            "score": ai_result["score"],
-            "ai_result": ai_result,
-        }}
-    )
+    try:
+        collection.update_one(
+            {"_id": ObjectId(doc_id)},
+            {"$set": {
+                "processed_text": ai_result["summary"],  # backward-compat field
+                "score": score,
+                "ai_result": ai_result,
+            }}
+        )
+    except Exception as e:
+        logger.error(f"[MongoDB update error] {e}")
+        # Non-fatal — the result was computed, just not saved. Proceed to render.
 
-    return {
-        "message": "Processed successfully",
-        "score": ai_result["score"],
-        "summary": ai_result["summary"],
-        "strengths": ai_result["strengths"],
-        "improvements": ai_result["improvements"],
-    }
+    # 6. Render result page
+    personal = doc.get("personalInfo", {})
+    meta = _score_meta(score)
+
+    return templates.TemplateResponse(
+        "result.html",
+        {
+            "request":          request,
+            "doc_id":           doc_id,
+            "firstName":        personal.get("firstName", ""),
+            "lastName":         personal.get("lastName", ""),
+            "email":            personal.get("email", ""),
+            "filename":         filename,
+            "score":            score,
+            "summary":          ai_result["summary"],
+            "strengths":        ai_result["strengths"],
+            "improvements":     ai_result["improvements"],
+            "score_color":      meta["score_color"],
+            "score_color_dim":  meta["score_color_dim"],
+            "verdict":          meta["verdict"],
+        },
+    )

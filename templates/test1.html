@@ -189,6 +189,44 @@
     .empty svg { width: 44px; height: 44px; stroke: var(--border); fill: none; margin: 0 auto 14px; display: block; }
     .empty p { font-size: 0.9rem; }
 
+    /* Admin dashboard stats widgets */
+    .stats-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      border-radius: 2px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+      position: relative;
+    }
+    .stat-card.full-width {
+      grid-column: span 2;
+    }
+    .stat-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+    .stat-value em {
+      font-size: 0.95rem;
+      font-style: normal;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
     @media (max-width: 768px) { .ranking-section { padding: 0 24px 60px; } }
   </style>
 </head>
@@ -196,41 +234,42 @@
 
 <div class="page">
   <div class="left">
-    <div class="eyebrow">Career Portal</div>
-    <h1>Submit Your<br><em>Résumé</em></h1>
-    <p class="subtitle">Take the first step toward your next opportunity. Upload your résumé and let us match you with roles that align with your expertise and ambitions.</p>
-    <div class="divider"></div>
-    <div class="requirements">
-      <h2>Submission Guidelines</h2>
-      <ul class="req-list">
-        <li>
-          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
-          <span><strong>Accepted formats:</strong> PDF, DOC, DOCX, TXT</span>
-        </li>
-        <li>
-          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
-          <span><strong>Maximum file size:</strong> 10 MB</span>
-        </li>
-        <li>
-          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
-          <span><strong>File naming:</strong> Use <em>FirstLast_Role.pdf</em> for easy identification</span>
-        </li>
-        <li>
-          <div class="req-icon"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3" stroke="#c9a84c" stroke-width="1.5" fill="none"/></svg></div>
-          <span><strong>Document quality:</strong> Ensure text is selectable — no password protection</span>
-        </li>
-      </ul>
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+      <div class="eyebrow">Recruiter Workspace</div>
+      <a href="/logout" style="font-family: 'Cormorant Garamond', serif; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: #e87070; text-decoration: none; border: 1px solid rgba(232, 112, 112, 0.25); padding: 5px 15px; border-radius: 2px; transition: all 0.2s;">Logout</a>
     </div>
-    <div class="formats">
-      <span class="chip">PDF</span>
-      <span class="chip">DOC</span>
-      <span class="chip">DOCX</span>
-      <span class="chip">TXT</span>
+    <h1>Candidate<br><em>Overview</em></h1>
+    <p class="subtitle">Real-time statistics of submitted applications, screening progression, and overall candidate matching index.</p>
+    <div class="divider"></div>
+    
+    <div class="stats-container">
+      <div class="stat-card">
+        <div class="stat-label">Total Applicants</div>
+        <div class="stat-value">{{ stats.total }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Processed Profiles</div>
+        <div class="stat-value">{{ stats.processed }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pending Reviews</div>
+        <div class="stat-value" style="color: var(--muted);">{{ stats.pending }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Match Score</div>
+        <div class="stat-value">{{ stats.average }}<em>/100</em></div>
+      </div>
+      <div class="stat-card full-width">
+        <div class="stat-label">Top Candidate Index</div>
+        <div class="stat-value" style="color: #5ec97d;">{{ stats.top }}<em>/100</em></div>
+      </div>
     </div>
   </div>
 
   <div class="right">
     <div class="card">
+      <div class="eyebrow" style="margin-bottom: 12px;">Candidate Ingestion</div>
+      <h2 style="font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 20px; font-weight: 400;">Scan & Add Profile</h2>
       <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
         <input type="text"  name="firstName" placeholder="First Name" required>
         <input type="text"  name="lastName"  placeholder="Last Name"  required>
@@ -243,8 +282,8 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/>
             </svg>
           </div>
-          <p class="drop-title">Drop your résumé here</p>
-          <p class="drop-sub">or <span>browse files</span> — PDF, DOC, DOCX, TXT</p>
+          <p class="drop-title" style="font-size: 1rem;">Upload résumé document</p>
+          <p class="drop-sub">drag & drop or <span>browse files</span></p>
         </div>
 
         <div class="file-badge" id="fileBadge">
@@ -258,10 +297,10 @@
           <button type="button" class="file-remove" id="fileRemove">✕</button>
         </div>
 
-        <button type="submit" class="submit-btn" id="submitBtn" disabled>Upload Résumé</button>
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>Ingest & Evaluate</button>
 
         <div class="progress-wrap" id="progressWrap">
-          <div class="progress-label"><span>Uploading…</span><span id="progressPct">0%</span></div>
+          <div class="progress-label"><span>Ingesting file…</span><span id="progressPct">0%</span></div>
           <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
         </div>
 
@@ -269,7 +308,7 @@
           <svg viewBox="0 0 24 24" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          Résumé uploaded successfully. We'll be in touch soon.
+          Candidate profile ingested successfully. Refreshing list...
         </div>
       </form>
     </div>
@@ -429,7 +468,10 @@
       setTimeout(() => {
         progressWrap.classList.remove('visible');
         if (result.error) { alert('Error: ' + result.error); submitBtn.disabled = false; }
-        else { successMsg.classList.add('visible'); }
+        else { 
+          successMsg.classList.add('visible'); 
+          setTimeout(() => { window.location.reload(); }, 1500);
+        }
       }, 400);
     } catch (err) {
       clearInterval(ticker);

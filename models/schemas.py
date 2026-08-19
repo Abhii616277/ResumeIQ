@@ -1,6 +1,4 @@
-"""
-models/schemas.py — Pydantic models for API responses.
-"""
+
 from typing import List, Optional
 
 from pydantic import BaseModel
@@ -30,7 +28,6 @@ class ProcessResponse(BaseModel):
 
 
 class CandidateView(BaseModel):
-    """Shape used when rendering the resume list page."""
     firstName: str
     lastName: str
     email: str

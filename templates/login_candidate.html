@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Candidate Gateway - AI Résumé Screener</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #e8c96a;
+      --gold-dim: rgba(201,168,76,0.15);
+      --bg: #0c0b10;
+      --surface: #13111a;
+      --surface2: #1a1825;
+      --text: #e8e0d0;
+      --muted: #7a7265;
+      --border: rgba(201,168,76,0.25);
+      --error-red: #e87070;
+    }
+
+    html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Cormorant Garamond', Georgia, serif; }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: ''; position: fixed;
+      width: 60vw; height: 60vw; border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+      top: -20vw; left: 50%; transform: translateX(-50%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .container {
+      position: relative; z-index: 1;
+      max-width: 500px; margin: 0 auto;
+      padding: 6vh 24px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh;
+      animation: fadeIn 0.6s ease both;
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--gold);
+      letter-spacing: 0.08em; text-decoration: none;
+      margin-bottom: 24px;
+    }
+    .logo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 40px 32px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .card::before, .card::after {
+      content: ''; position: absolute; width: 20px; height: 20px; border-color: var(--gold); border-style: solid;
+    }
+    .card::before { top: 16px; left: 16px; border-width: 1px 0 0 1px; }
+    .card::after  { bottom: 16px; right: 16px; border-width: 0 1px 1px 0; }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+      gap: 16px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      padding: 8px 4px 12px;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.3s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--gold);
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--gold);
+    }
+
+    .form-panel {
+      display: none;
+    }
+    .form-panel.active {
+      display: block;
+      animation: tabFade 0.4s ease both;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .card input[type="text"],
+    .card input[type="email"],
+    .card input[type="password"] {
+      width: 100%; display: block;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 2px;
+      padding: 13px 16px; color: var(--text);
+      font-family: 'Cormorant Garamond', serif; font-size: 0.95rem;
+      outline: none; transition: border-color .2s;
+    }
+    .card input:focus { border-color: var(--gold); }
+
+    /* Drop Zone styling for registration */
+    .drop-zone {
+      border: 1px dashed rgba(201,168,76,0.4); border-radius: 2px; padding: 24px 16px;
+      text-align: center; cursor: pointer; transition: all 0.3s ease;
+      position: relative; background: rgba(201,168,76,0.02);
+      margin-top: 8px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--gold); background: var(--gold-dim); }
+    .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+    .drop-icon { width: 36px; height: 36px; margin: 0 auto 12px; border: 1px solid var(--border); border-radius: 50%; display: grid; place-items: center; transition: border-color 0.3s, transform 0.3s; }
+    .drop-zone:hover .drop-icon { border-color: var(--gold); transform: translateY(-2px); }
+    .drop-icon svg { width: 16px; height: 16px; stroke: var(--gold); fill: none; }
+    .drop-title { font-family: 'Playfair Display', serif; font-size: 0.95rem; color: var(--text); margin-bottom: 4px; }
+    .drop-sub { font-size: 0.78rem; color: var(--muted); }
+    .drop-sub span { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+
+    .file-badge { display: none; align-items: center; gap: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 2px; padding: 10px 14px; margin-top: 12px; }
+    .file-badge.visible { display: flex; }
+    .file-badge svg { width: 16px; height: 16px; stroke: var(--gold); fill: none; flex-shrink: 0; }
+    .file-info { flex: 1; overflow: hidden; }
+    .file-name { font-size: 0.8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-size { font-size: 0.7rem; color: var(--muted); }
+    .file-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; transition: color 0.2s; }
+    .file-remove:hover { color: #e87070; }
+
+    .error-msg {
+      background: rgba(232, 112, 112, 0.08);
+      border: 1px solid rgba(232, 112, 112, 0.25);
+      color: var(--error-red);
+      font-size: 0.85rem;
+      padding: 12px 16px;
+      border-radius: 2px;
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    .submit-btn {
+      width: 100%; padding: 16px 24px;
+      background: var(--gold); color: #0c0b10;
+      font-family: 'Cormorant Garamond', serif; font-size: 0.82rem;
+      font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase;
+      border: none; border-radius: 2px; cursor: pointer;
+      position: relative; overflow: hidden; transition: background 0.25s, transform 0.15s;
+      margin-top: 12px;
+      margin-bottom: 16px;
+    }
+    .submit-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
+    .submit-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .back-link {
+      display: inline-block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+      text-align: center;
+      width: 100%;
+    }
+    .back-link:hover { color: var(--gold); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes tabFade {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/login" class="logo">
+      <div class="logo-dot"></div>
+      AI Résumé Screener
+    </a>
+
+    <div class="card">
+      <div class="tabs">
+        <button type="button" class="tab-btn {% if active_tab == 'login' %}active{% endif %}" onclick="switchTab('login')">Sign In</button>
+        <button type="button" class="tab-btn {% if active_tab == 'register' %}active{% endif %}" onclick="switchTab('register')">Register</button>
+      </div>
+
+      {% if error %}
+      <div class="error-msg" id="errorMsg">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <!-- SIGN IN PANEL -->
+      <div id="loginPanel" class="form-panel {% if active_tab == 'login' %}active{% endif %}">
+        <form action="/login/candidate" method="post">
+          <div class="form-group">
+            <label for="login-email">Email Address</label>
+            <input type="email" id="login-email" name="email" required autocomplete="email" />
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" name="password" required autocomplete="current-password" />
+          </div>
+
+          <button type="submit" class="submit-btn">Sign In</button>
+        </form>
+      </div>
+
+      <!-- REGISTER PANEL -->
+      <div id="registerPanel" class="form-panel {% if active_tab == 'register' %}active{% endif %}">
+        <form action="/register" method="post" enctype="multipart/form-data" id="regForm">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" name="firstName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" name="lastName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-email">Email Address</label>
+            <input type="email" id="reg-email" name="email" required autocomplete="email" />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-password">Password</label>
+            <input type="password" id="reg-password" name="password" required autocomplete="new-password" />
+          </div>
+
+          <div class="form-group">
+            <label>Upload Résumé</label>
+            <div class="drop-zone" id="dropZone">
+              <input type="file" id="resume" name="file" accept=".pdf,.doc,.docx,.txt" required />
+              <div class="drop-icon">
+                <svg viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/>
+                </svg>
+              </div>
+              <p class="drop-title">Drop your résumé here</p>
+              <p class="drop-sub">or <span>browse files</span></p>
+            </div>
+
+            <div class="file-badge" id="fileBadge">
+              <svg viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V6a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"/>
+              </svg>
+              <div class="file-info">
+                <div class="file-name" id="fileName">—</div>
+                <div class="file-size" id="fileSize">—</div>
+              </div>
+              <button type="button" class="file-remove" id="fileRemove">✕</button>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="regSubmitBtn">Register & Apply</button>
+        </form>
+      </div>
+
+      <a href="/login" class="back-link">&larr; Back to Portal selection</a>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      // Clear URL params or existing errors
+      const err = document.getElementById('errorMsg');
+      if (err) err.style.display = 'none';
+
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+
+      if (tab === 'login') {
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('loginPanel').classList.add('active');
+      } else {
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('registerPanel').classList.add('active');
+      }
+    }
+
+    // Dropzone logic
+    const dropZone    = document.getElementById('dropZone');
+    const fileInput   = document.getElementById('resume');
+    const fileBadge   = document.getElementById('fileBadge');
+    const fileName    = document.getElementById('fileName');
+    const fileSize    = document.getElementById('fileSize');
+    const fileRemove  = document.getElementById('fileRemove');
+    const regSubmitBtn = document.getElementById('regSubmitBtn');
+
+    const MAX_BYTES = 10 * 1024 * 1024;
+    const ALLOWED   = ['pdf', 'doc', 'docx', 'txt'];
+
+    function formatBytes(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      return (b / 1048576).toFixed(2) + ' MB';
+    }
+
+    function getExt(name) { return name.split('.').pop().toLowerCase(); }
+
+    function showFile(file) {
+      if (file.size > MAX_BYTES) { alert('File exceeds 10 MB limit.'); clearFile(); return; }
+      if (!ALLOWED.includes(getExt(file.name))) {
+        alert('Unsupported format. Please use PDF, DOC, DOCX or TXT.');
+        clearFile(); return;
+      }
+      fileName.textContent = file.name;
+      fileSize.textContent = formatBytes(file.size);
+      fileBadge.classList.add('visible');
+      regSubmitBtn.disabled = false;
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      fileBadge.classList.remove('visible');
+      regSubmitBtn.disabled = true;
+    }
+
+    fileInput.addEventListener('change', () => { if (fileInput.files.length) showFile(fileInput.files[0]); });
+    fileRemove.addEventListener('click', clearFile);
+
+    ['dragenter', 'dragover'].forEach(ev =>
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('drag-over'); })
+    );
+    ['dragleave', 'drop'].forEach(ev =>
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('drag-over'); })
+    );
+    dropZone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) showFile(e.dataTransfer.files[0]); });
+  </script>
+</body>
+</html>

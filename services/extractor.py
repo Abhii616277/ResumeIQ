@@ -1,21 +1,14 @@
-"""
-services/extractor.py — extract plain text from résumé files.
 
-Supports PDF, DOCX, DOC, and TXT. Unsupported types or extraction failures
-return an empty string, which callers should treat as "no text found".
-"""
 import io
 
 import pdfplumber
+import docx  # python-docx — install with: pip install python-docx
 
 from utils.logger import logger
 
 
 def extract_text(content: bytes, filename: str) -> str:
-    """
-    Extract plain text from PDF, DOCX, DOC, or TXT files.
-    Returns an empty string if extraction fails or the type is unsupported.
-    """
+
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
     if ext == "pdf":
@@ -42,8 +35,6 @@ def _extract_pdf(content: bytes) -> str:
 
 def _extract_docx(content: bytes) -> str:
     try:
-        import docx  # python-docx
-
         document = docx.Document(io.BytesIO(content))
         paragraphs = [p.text for p in document.paragraphs if p.text.strip()]
 

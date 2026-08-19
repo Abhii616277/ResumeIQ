@@ -16,7 +16,28 @@ MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME", "node")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
 
-if not GEMINI_API_KEY:
+# ── Admin credentials ────────────────────────────────────────────────────────
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+# ── JWT settings ─────────────────────────────────────────────────────────────
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "480"))
+JWT_COOKIE_SECURE = os.getenv("JWT_COOKIE_SECURE", "True").lower() == "true"
+
+# ── Startup validation ────────────────────────────────────────────────────────
+_missing = [
+    name for name, val in [
+        ("GEMINI_API_KEY", GEMINI_API_KEY),
+        ("ADMIN_USERNAME", ADMIN_USERNAME),
+        ("ADMIN_PASSWORD", ADMIN_PASSWORD),
+        ("JWT_SECRET", JWT_SECRET),
+    ] if not val
+]
+if _missing:
     raise RuntimeError(
-        "GEMINI_API_KEY is not set. Add it to your environment or a .env file."
+        f"Missing required environment variables: {', '.join(_missing)}. "
+        "Add them to your .env file."
     )
+

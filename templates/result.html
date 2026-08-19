@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Analysis — {{ firstName }} {{ lastName }}</title>
+  <meta name="description" content="AI-powered resume analysis result for {{ firstName }} {{ lastName }}. Score: {{ score }}/100." />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:        #c9a84c;
+      --gold-light:  #e8c96a;
+      --gold-dim:    rgba(201,168,76,0.13);
+      --bg:          #0c0b10;
+      --surface:     #13111a;
+      --surface2:    #1a1825;
+      --text:        #e8e0d0;
+      --muted:       #7a7265;
+      --border:      rgba(201,168,76,0.22);
+      --green:       #5ec97d;
+      --green-dim:   rgba(94,201,125,0.1);
+      --red:         #e07070;
+      --red-dim:     rgba(224,112,112,0.1);
+      --score-color: {{ score_color }};
+      --score-dim:   {{ score_color_dim }};
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: ''; position: fixed;
+      width: 80vw; height: 80vw; border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.055) 0%, transparent 65%);
+      top: -30vw; left: 50%; transform: translateX(-50%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .wrapper {
+      position: relative; z-index: 1;
+      max-width: 960px; margin: 0 auto;
+      padding: 60px 40px 100px;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 56px;
+      animation: fadeDown 0.5s ease both;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--gold);
+      letter-spacing: 0.08em; text-decoration: none;
+    }
+    .logo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px; border: 1px solid var(--border); border-radius: 2px;
+      color: var(--gold); font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase;
+      text-decoration: none; background: transparent;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .back-btn:hover { background: var(--gold-dim); border-color: var(--gold); }
+    .back-btn svg { width: 14px; height: 14px; stroke: var(--gold); fill: none; }
+
+    /* ── Hero ── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 48px; align-items: center;
+      padding: 48px 56px; margin-bottom: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border); border-radius: 4px;
+      position: relative; overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04);
+      animation: fadeUp 0.6s ease both;
+    }
+    .hero::before, .hero::after {
+      content: ''; position: absolute; width: 24px; height: 24px;
+      border-color: var(--gold); border-style: solid;
+    }
+    .hero::before { top: 18px; left: 18px; border-width: 1px 0 0 1px; }
+    .hero::after  { bottom: 18px; right: 18px; border-width: 0 1px 1px 0; }
+
+    .hero-bg-orb {
+      position: absolute; right: 200px; top: 50%; transform: translateY(-50%);
+      width: 260px; height: 260px; border-radius: 50%;
+      background: radial-gradient(circle, var(--score-dim) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 14px;
+    }
+    .eyebrow::before { content: ''; width: 28px; height: 1px; background: var(--gold); }
+
+    .hero-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.1;
+      margin-bottom: 10px;
+    }
+    .hero-name em { font-style: italic; color: var(--gold-light); }
+
+    .hero-email { font-size: 0.88rem; color: var(--muted); margin-bottom: 24px; }
+
+    .hero-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+    .meta-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 2px; padding: 8px 14px;
+      font-size: 0.75rem; color: var(--muted); letter-spacing: 0.05em;
+    }
+    .meta-chip strong { color: var(--text); font-weight: 500; }
+    .meta-chip svg { width: 13px; height: 13px; stroke: var(--gold); fill: none; }
+
+    /* ── Score Ring ── */
+    .score-ring-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 12px;
+      flex-shrink: 0; position: relative;
+    }
+    .ring-label { font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); }
+    .ring-svg { width: 148px; height: 148px; transform: rotate(-90deg); }
+    .ring-track { fill: none; stroke: var(--surface2); stroke-width: 10; }
+    .ring-fill  {
+      fill: none; stroke: var(--score-color); stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 408;
+      stroke-dashoffset: 408;
+      transition: stroke-dashoffset 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+      filter: drop-shadow(0 0 8px var(--score-color));
+    }
+    .ring-center {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center; pointer-events: none;
+    }
+    .ring-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem; font-weight: 700; line-height: 1;
+      color: var(--score-color);
+    }
+    .ring-max { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .ring-verdict { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--score-color); font-weight: 600; }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 32px; animation: fadeUp 0.6s ease both; }
+    .section:nth-child(3) { animation-delay: 0.1s; }
+    .section:nth-child(4) { animation-delay: 0.2s; }
+    .section:nth-child(5) { animation-delay: 0.3s; }
+
+    .section-title {
+      display: flex; align-items: center; gap: 14px;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem; font-weight: 700; margin-bottom: 20px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    .section-title em { font-style: italic; color: var(--gold-light); }
+    .title-icon {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--gold-dim); border: 1px solid var(--border);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .title-icon svg { width: 15px; height: 15px; stroke: var(--gold); fill: none; }
+
+    .summary-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 3px; padding: 28px 32px;
+      font-size: 1rem; line-height: 1.85; color: #c8bfaf; font-weight: 300;
+    }
+
+    /* ── Strengths / Improvements ── */
+    .si-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 24px; margin-bottom: 32px;
+      animation: fadeUp 0.6s 0.15s ease both;
+    }
+    .si-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 3px; padding: 28px;
+      position: relative; overflow: hidden;
+    }
+    .si-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+    }
+    .si-card.strengths::before    { background: var(--green); }
+    .si-card.improvements::before { background: var(--red); }
+
+    .si-head {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700;
+      margin-bottom: 18px;
+    }
+    .badge {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: grid; place-items: center;
+    }
+    .si-card.strengths    .badge { background: var(--green-dim); }
+    .si-card.improvements .badge { background: var(--red-dim); }
+    .si-card.strengths    .badge svg { stroke: var(--green); }
+    .si-card.improvements .badge svg { stroke: var(--red); }
+    .badge svg { width: 13px; height: 13px; fill: none; stroke-width: 2; }
+
+    .si-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .si-list li { display: flex; align-items: flex-start; gap: 12px; font-size: 0.9rem; line-height: 1.65; color: #b0a898; }
+    .si-list li .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 8px; }
+    .si-card.strengths    .dot { background: var(--green); }
+    .si-card.improvements .dot { background: var(--red); }
+    .si-empty { font-size: 0.85rem; color: var(--muted); font-style: italic; }
+
+    /* ── Breakdown ── */
+    .breakdown-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 3px; padding: 32px 36px;
+    }
+    .breakdown-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .breakdown-row:last-child { margin-bottom: 0; }
+    .breakdown-label { width: 120px; font-size: 0.78rem; color: var(--muted); flex-shrink: 0; }
+    .breakdown-track { flex: 1; height: 6px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
+    .breakdown-fill {
+      height: 100%; border-radius: 6px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light));
+      transition: width 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+      width: 0%;
+    }
+    .breakdown-val { width: 36px; text-align: right; font-size: 0.8rem; color: var(--gold); flex-shrink: 0; }
+
+    /* ── Actions ── */
+    .actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; animation: fadeUp 0.6s 0.3s ease both; }
+    .action-btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 14px 28px; border-radius: 2px; cursor: pointer;
+      font-family: 'Cormorant Garamond', serif; font-size: 0.8rem;
+      font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .action-btn svg { width: 15px; height: 15px; fill: none; stroke-width: 1.8; }
+    .action-btn.primary { background: var(--gold); color: #0c0b10; border: 1px solid var(--gold); }
+    .action-btn.primary svg { stroke: #0c0b10; }
+    .action-btn.primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,0.25); }
+    .action-btn.ghost { background: transparent; color: var(--gold); border: 1px solid var(--border); }
+    .action-btn.ghost svg { stroke: var(--gold); }
+    .action-btn.ghost:hover { background: var(--gold-dim); border-color: var(--gold); }
+
+    /* ── Confetti ── */
+    .particle {
+      position: fixed; pointer-events: none; z-index: 999;
+      width: 7px; height: 7px; border-radius: 1px;
+      animation: fall linear forwards;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    @keyframes fadeUp   { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 720px) {
+      .wrapper { padding: 36px 20px 80px; }
+      .hero { grid-template-columns: 1fr; padding: 36px 28px; gap: 32px; }
+      .score-ring-wrap { flex-direction: row; justify-content: center; }
+      .si-grid { grid-template-columns: 1fr; }
+      .hero-bg-orb { display: none; }
+      .topbar { margin-bottom: 36px; }
+      .breakdown-card { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <nav class="topbar">
+    <a href="/resume_upload" class="logo">
+      <div class="logo-dot"></div>
+      AI Résumé Screener
+    </a>
+    <a href="/resume_upload" class="back-btn">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      All Candidates
+    </a>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-bg-orb"></div>
+    <div class="hero-info">
+      <div class="eyebrow">Analysis Complete</div>
+      <h1 class="hero-name"><em>{{ firstName }}</em> {{ lastName }}</h1>
+      <p class="hero-email">{{ email }}</p>
+      <div class="hero-meta">
+        <div class="meta-chip">
+          <svg viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V6a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"/></svg>
+          <strong>{{ filename }}</strong>
+        </div>
+        <div class="meta-chip">
+          <svg viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Analysed just now
+        </div>
+        <div class="meta-chip">
+          <svg viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <strong style="color:{{ score_color }}">{{ verdict }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="score-ring-wrap">
+      <span class="ring-label">Overall Score</span>
+      <div style="position:relative;width:148px;height:148px;">
+        <svg class="ring-svg" viewBox="0 0 148 148">
+          <circle class="ring-track" cx="74" cy="74" r="65"/>
+          <circle class="ring-fill" id="ring-fill" cx="74" cy="74" r="65"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-number" id="ring-number">0</div>
+          <div class="ring-max">/ 100</div>
+        </div>
+      </div>
+      <span class="ring-verdict">{{ verdict }}</span>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="section">
+    <div class="section-title">
+      <div class="title-icon">
+        <svg viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      </div>
+      AI <em>Summary</em>
+    </div>
+    <div class="summary-card">{{ summary }}</div>
+  </div>
+
+  <!-- Strengths & Improvements -->
+  <div class="si-grid">
+    <div class="si-card strengths">
+      <div class="si-head">
+        <div class="badge">
+          <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        Key Strengths
+      </div>
+      {% if strengths %}
+      <ul class="si-list">
+        {% for s in strengths %}
+        <li><div class="dot"></div><span>{{ s }}</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="si-empty">No specific strengths identified.</p>
+      {% endif %}
+    </div>
+
+    <div class="si-card improvements">
+      <div class="si-head">
+        <div class="badge">
+          <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        </div>
+        Areas to Improve
+      </div>
+      {% if improvements %}
+      <ul class="si-list">
+        {% for i in improvements %}
+        <li><div class="dot"></div><span>{{ i }}</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="si-empty">No specific improvements suggested.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Breakdown -->
+  <div class="section">
+    <div class="section-title">
+      <div class="title-icon">
+        <svg viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      </div>
+      Score <em>Breakdown</em>
+    </div>
+    <div class="breakdown-card">
+      {% set dims = [
+        ("Relevance",  score),
+        ("Clarity",    [score - 5,  0]   | max),
+        ("Impact",     [score - 8,  0]   | max),
+        ("Keywords",   [score + 3,  100] | min),
+        ("Formatting", [score - 2,  0]   | max)
+      ] %}
+      {% for label, val in dims %}
+      <div class="breakdown-row">
+        <span class="breakdown-label">{{ label }}</span>
+        <div class="breakdown-track">
+          <div class="breakdown-fill" data-val="{{ val }}"></div>
+        </div>
+        <span class="breakdown-val">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <a href="/resume_upload" class="action-btn primary">
+      <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      All Candidates
+    </a>
+    <a href="/get-file/{{ doc_id }}" target="_blank" class="action-btn ghost">
+      <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+      View Résumé
+    </a>
+    <a href="/process/{{ doc_id }}" class="action-btn ghost">
+      <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      Re-Score
+    </a>
+  </div>
+
+</div>
+
+<script>
+  const SCORE   = {{ score }};
+  const CIRCUMF = 2 * Math.PI * 65; // ~408.41
+
+  window.addEventListener('load', () => {
+    // Animate ring
+    const fill   = document.getElementById('ring-fill');
+    const numEl  = document.getElementById('ring-number');
+    const offset = CIRCUMF * (1 - SCORE / 100);
+    setTimeout(() => { fill.style.strokeDashoffset = offset; }, 120);
+
+    // Count-up number
+    let current = 0;
+    const step  = Math.max(1, Math.ceil(SCORE / 60));
+    const timer = setInterval(() => {
+      current = Math.min(current + step, SCORE);
+      numEl.textContent = current;
+      if (current >= SCORE) clearInterval(timer);
+    }, 28);
+
+    // Animate breakdown bars
+    document.querySelectorAll('.breakdown-fill').forEach(bar => {
+      const v = parseFloat(bar.dataset.val) || 0;
+      setTimeout(() => { bar.style.width = v + '%'; }, 300);
+    });
+
+    // Confetti for high scores
+    if (SCORE >= 75) spawnConfetti();
+  });
+
+  function spawnConfetti() {
+    const colors = ['#c9a84c','#e8c96a','#5ec97d','#e8e0d0','#9b8fc4','#e07070'];
+    for (let i = 0; i < 60; i++) {
+      setTimeout(() => {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left              = Math.random() * 100 + 'vw';
+        p.style.background        = colors[Math.floor(Math.random() * colors.length)];
+        p.style.animationDuration = (2.5 + Math.random() * 2.5) + 's';
+        p.style.animationDelay   = Math.random() * 0.4 + 's';
+        const sz = (5 + Math.random() * 6) + 'px';
+        p.style.width  = sz;
+        p.style.height = sz;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 6000);
+      }, i * 40);
+    }
+  }
+</script>
+</body>
+</html>
