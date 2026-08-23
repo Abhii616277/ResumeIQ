@@ -17,4 +17,3 @@ async def redirect_exception_handler(request: Request, exc: RedirectException):
 
 app.include_router(auth.router)
 app.include_router(resume.router)
-
