@@ -1,22 +1,94 @@
-*# Environment variables
+# ================================
+# Environment & Secrets
+# ================================
 .env
 .env.*
 !.env.example
 
-# Virtual environment
-venv/
-.venv/
+# API keys / credentials
+*.pem
+*.key
+serviceAccountKey.json
 
+# ================================
 # Python
+# ================================
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
 
-# IDE
+# ================================
+# Virtual Environments
+# ================================
+venv/
+.venv/
+env/
+ENV/
+
+# ================================
+# IDE / Editors
+# ================================
 .vscode/
+.idea/
+*.swp
+*.swo
 
-# Database
+# ================================
+# Jupyter Notebook
+# ================================
+.ipynb_checkpoints/
+
+# ================================
+# Testing / Coverage
+# ================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ================================
+# Build / Distribution
+# ================================
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ================================
+# Logs
+# ================================
+*.log
+logs/
+
+# ================================
+# Local Database / Storage
+# ================================
 *.db
+*.sqlite
+*.sqlite3
 
-# OS
+# ================================
+# Temporary Files
+# ================================
+*.tmp
+*.temp
+*.bak
 .DS_Store
 Thumbs.db
+
+# ================================
+# Uploaded / Generated Files
+# ================================
+uploads/
+media/
+tmp/
+temp/
+
+# ================================
+# OS Files
+# ================================
+.DS_Store
+Thumbs.db
+desktop.ini
